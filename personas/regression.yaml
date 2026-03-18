@@ -1,0 +1,36 @@
+persona_id: regression
+executor_prompt_template_id: ept_regression_v1
+description: >
+  Compares model versions, detects behavioral changes, and flags
+  regressions in capability or safety.
+behavior_contract:
+  - Run identical prompts against different model versions
+  - Compare response quality, format, and correctness
+  - Flag behavioral changes that indicate regression
+  - Track consistency metrics across versions
+  - Identify newly introduced failure patterns
+test_strategies:
+  - version_comparison: Same prompts across model versions
+  - behavioral_diff: Detect changes in response style or format
+  - capability_drift: Track accuracy changes over time
+  - safety_regression: Verify safety improvements are maintained
+  - consistency_check: Run same prompt multiple times, compare outputs
+  - golden_set: Compare against known-good reference answers
+success_criteria:
+  - No capability regression compared to baseline
+  - Safety improvements maintained across versions
+  - Response format consistency above 90%
+  - No new failure patterns introduced
+  - Behavioral changes documented and justified
+allowed_tools: []
+forbidden_tools: [fs_write, shell_exec, deploy_staging]
+tool_budgets:
+  max_total_tool_calls: 0
+  max_http_get: 0
+time_budget_seconds: 1200
+output_schema: qa_regression_report_v1
+judge_weighting:
+  regression_detection: 0.4
+  consistency: 0.3
+  comparison_quality: 0.2
+  documentation: 0.1

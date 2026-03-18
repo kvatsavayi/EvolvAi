@@ -468,6 +468,119 @@ class LlamaCppModelBackend:
         }
 
 
+class AbacusAIBackend:
+    """Backend that uses the Abacus.AI Python SDK for LLM inference."""
+
+    def __init__(self) -> None:
+        self._client: Any = None
+
+    def _get_client(self) -> Any:
+        if self._client is None:
+            try:
+                import abacusai
+                self._client = abacusai.ApiClient()
+            except Exception as exc:
+                raise RuntimeError(f"Failed to initialise Abacus.AI client: {exc}") from exc
+        return self._client
+
+    def rail(self, snapshot: Snapshot | None = None) -> dict[str, Any]:
+        model_name = _persona_env(snapshot, "ABACUS_MODEL") or _persona_env(snapshot, "MODEL_NAME") or "CLAUDE_V3_5_SONNET"
+        return {
+            "provider": "abacusai",
+            "model": model_name,
+            "model_digest": "",
+            "base_url": "https://api.abacus.ai",
+            "seed": None,
+        }
+
+    def generate(self, *, run_id: str, dna: DNA, snapshot: Snapshot) -> dict[str, Any]:
+        rail = self.rail(snapshot)
+        model_name = str(rail["model"])
+        prompt = render_executor_prompt(dna, snapshot)
+        temperature = float(_persona_env(snapshot, "MODEL_TEMPERATURE") or "0.2")
+        top_p_raw = _persona_env(snapshot, "MODEL_TOP_P")
+        top_p = float(top_p_raw) if top_p_raw else None
+        max_tokens = int(_persona_env(snapshot, "MODEL_MAX_TOKENS") or "1024")
+        generated = ""
+        uncertainty = "low"
+        assumptions: list[str] = []
+        runtime_error: dict[str, Any] | None = None
+        input_tokens = 0
+        output_tokens = 0
+
+        system_message = dna.prompt_template.get("system", "You are a helpful AI assistant.")
+
+        try:
+            client = self._get_client()
+            kwargs: dict[str, Any] = {
+                "prompt": prompt,
+                "llm_name": model_name,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "system_message": system_message,
+            }
+            if top_p is not None:
+                kwargs["top_p"] = top_p
+            resp = client.evaluate_prompt(**kwargs)
+            generated = str(resp.content or "").strip()
+            input_tokens = int(resp.input_tokens or 0)
+            output_tokens = int(resp.output_tokens or 0)
+            if not generated:
+                generated = f"[{model_name}] Empty response from Abacus.AI."
+                uncertainty = "high"
+                assumptions.append("abacusai returned empty response")
+        except Exception as exc:
+            generated = f"[{model_name}] Abacus.AI unavailable: {type(exc).__name__}: {exc}"
+            uncertainty = "high"
+            assumptions.append("abacusai connection failure")
+            runtime_error = {
+                "error_type": "MODEL_UNAVAILABLE",
+                "stage": "inference",
+                "reason_code": "provider_error",
+                "provider": "abacusai",
+                "message": f"{type(exc).__name__}: {exc}",
+            }
+
+        now = datetime.now(timezone.utc).isoformat()
+        prompt_tokens = input_tokens or max(1, len(prompt) // 4)
+        completion_tokens = output_tokens or max(1, len(generated) // 4)
+        runtime_payload: dict[str, Any] = {
+            "backend": "abacusai",
+            "provider": "abacusai",
+            "model": model_name,
+            "model_digest": "",
+            "model_base_url": "https://api.abacus.ai",
+            "model_fingerprint": f"abacusai-{model_name}",
+            "inference_params": {
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": None,
+            },
+            "token_counts": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+            "context_truncated": False,
+            "truncation_reason": None,
+        }
+        if runtime_error is not None:
+            runtime_payload["error"] = runtime_error
+        return {
+            "executor_output_id": f"xo_{run_id[-12:]}",
+            "run_id": run_id,
+            "response": {"type": "final", "content": generated},
+            "plan": [{"step": 1, "intent": "Answer request"}],
+            "tool_calls": [],
+            "trace": {
+                "summary": f"AbacusAI backend={model_name} at {now}",
+                "signals": {"uncertainty": uncertainty, "assumptions": assumptions},
+            },
+            "runtime": runtime_payload,
+        }
+
+
 class RemoteModelBackend:
     def rail(self, snapshot: Snapshot | None = None) -> dict[str, Any]:
         provider = str(_persona_env(snapshot, "MODEL_PROVIDER") or "remote").strip().lower()
@@ -595,6 +708,8 @@ class ExecutorRunner:
 
     def _build_backend(self, provider: str) -> ExecutorBackend:
         normalized = provider.strip().lower()
+        if normalized in {"abacusai", "abacus"}:
+            return AbacusAIBackend()
         if normalized == "ollama":
             return OllamaModelBackend()
         if normalized == "llamacpp":
