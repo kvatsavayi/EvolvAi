@@ -21,6 +21,7 @@ from core.qa.validators import (
     parse_llm_judge_response,
     run_validators,
 )
+from core.qa.hybrid_judge import HybridJudge, HybridJudgeConfig, run_hybrid_evaluation
 
 
 def _utc_now() -> str:
@@ -34,6 +35,7 @@ class QAEngine:
     - Testing a single model
     - Comparing multiple models on the same suite
     - Running with/without LLM-as-Judge
+    - Hybrid evaluation (normalizer + rules + LLM judge)
     - Regression testing against baseline results
     """
 
@@ -43,11 +45,33 @@ class QAEngine:
         use_llm_judge: bool = False,
         judge_model: Optional[str] = None,
         consistency_runs: int = 1,
+        use_hybrid_judge: bool = False,
+        enable_normalizer: bool = True,
+        hybrid_config: Optional[HybridJudgeConfig] = None,
     ) -> None:
         self.use_llm_judge = use_llm_judge
         self.judge_model = judge_model or "CLAUDE_V3_5_SONNET"
         self.consistency_runs = max(1, consistency_runs)
         self._client: Any = None
+
+        # Hybrid judge configuration
+        self.use_hybrid_judge = use_hybrid_judge
+        if hybrid_config:
+            self._hybrid_config = hybrid_config
+        else:
+            self._hybrid_config = HybridJudgeConfig(
+                enable_normalizer=enable_normalizer,
+                enable_llm_judge=use_llm_judge or use_hybrid_judge,
+                judge_model=self.judge_model,
+                normalizer_model=self.judge_model,
+            )
+        self._hybrid_judge: Optional[HybridJudge] = None
+
+    @property
+    def hybrid_judge(self) -> HybridJudge:
+        if self._hybrid_judge is None:
+            self._hybrid_judge = HybridJudge(self._hybrid_config)
+        return self._hybrid_judge
 
     # ------------------------------------------------------------------
     # LLM client
@@ -165,17 +189,25 @@ class QAEngine:
                 if not extra["error"]:
                     additional_responses.append(extra["response"])
 
-        # LLM-as-Judge
-        llm_judge_scores = self._run_llm_judge(test_case, result["response"])
-
-        # Run validators
-        validation = run_validators(
-            test_case,
-            result["response"],
-            additional_responses=additional_responses if additional_responses else None,
-            baseline_result=baseline_result,
-            llm_judge_scores=llm_judge_scores,
-        )
+        # Choose evaluation path: hybrid judge or legacy validators
+        if self.use_hybrid_judge:
+            validation = run_hybrid_evaluation(
+                test_case,
+                result["response"],
+                additional_responses=additional_responses if additional_responses else None,
+                baseline_result=baseline_result,
+                config=self._hybrid_config,
+            )
+        else:
+            # Legacy path: optional LLM-as-Judge + rule validators
+            llm_judge_scores = self._run_llm_judge(test_case, result["response"])
+            validation = run_validators(
+                test_case,
+                result["response"],
+                additional_responses=additional_responses if additional_responses else None,
+                baseline_result=baseline_result,
+                llm_judge_scores=llm_judge_scores,
+            )
 
         return TestCaseResult(
             test_id=test_case.test_id,

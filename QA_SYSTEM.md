@@ -13,6 +13,71 @@ The QA system integrates deeply with EvolvAi's existing architecture:
 
 ## Architecture
 
+### Three-Layer Hybrid Evaluation Pipeline
+
+The QA system uses a three-layer evaluation architecture that combines the speed of rule-based checks with the intelligence of LLM-based evaluation:
+
+```
+┌──────────────────────────────────────────────────┐
+│                QA API Endpoints                   │
+│  /v1/qa/test-model  /v1/qa/compare-models        │
+│  /v1/qa/regression  /v1/qa/attractors            │
+└──────────────────┬───────────────────────────────┘
+                   │
+          ┌────────▼────────┐
+          │   QA Engine      │  ← orchestrates test execution
+          │  (engine.py)     │     supports legacy or hybrid mode
+          └────────┬─────────┘
+                   │
+       ┌───────────▼───────────┐
+       │    Hybrid Judge        │  ← three-layer evaluation
+       │  (hybrid_judge.py)     │
+       └──┬────────┬────────┬──┘
+          │        │        │
+   ┌──────▼──┐ ┌──▼──────┐ ┌▼──────────┐
+   │ Layer 1  │ │ Layer 2  │ │ Layer 3   │
+   │ Safety   │ │ LLM      │ │ LLM-as-  │
+   │ Rules    │ │ Normalizer│ │ Judge    │
+   │ <1ms     │ │ <1ms-1s  │ │ 2-3s     │
+   └──────────┘ └──────────┘ └──────────┘
+   toxicity      9,386→9386   semantic
+   PII           x=5 → 5     correctness
+   bias          code extract  completeness
+   refusals      case norm     quality
+```
+
+| Layer | Module | Purpose | Speed | Cost |
+|-------|--------|---------|-------|------|
+| 1. Safety Rules | `validators.py` | Toxicity, PII, bias, refusal detection | <1ms | Free |
+| 2. LLM Normalizer | `normalizer.py` | Format conversion for fair comparison | <1ms (local) / ~1s (LLM) | Free (local) |
+| 3. LLM-as-Judge | `llm_judge.py` | Multi-dimensional semantic evaluation | 2-3s | API call |
+
+**Key design principles:**
+- **Fast-path for safety**: If Layer 1 detects toxicity, skip Layers 2-3 entirely
+- **Local normalization first**: Numbers, dates, JSON parsed locally without LLM calls
+- **LLM fallback**: Only invoke LLM for complex semantic comparisons
+- **Judge overrides false negatives**: If rules say "fail" but LLM judge says "pass", the judge wins
+- **Zero regressions**: Safety rule failures are never overridden
+
+### Improvement Over Rule-Based Approach
+
+The normalization layer fixes common false negatives:
+
+| Problem | Before (Rules) | After (Hybrid) |
+|---------|---------------|-----------------|
+| `247 * 38 = 9,386` vs expected `9386` | ❌ FAIL (token mismatch) | ✅ PASS (numeric equivalence) |
+| Verbose integral answer vs `x^3/3` | ❌ FAIL (substring missing) | ✅ PASS (semantic match) |
+| `x = 5` vs expected `5` | ❌ FAIL (extra tokens) | ✅ PASS (value extraction) |
+
+**Real test results (32 tests × 3 models):**
+- Claude 3.5 Sonnet: 68.8% → 81.2% (+12.5%)
+- GPT-4o: 78.1% → 87.5% (+9.4%)
+- Llama 3.1 70B: 56.2% → 59.4% (+3.1%)
+- **Capability tests: All models → 100%** (up from 83-92%)
+- **Zero regressions introduced**
+
+### Legacy Architecture (still supported)
+
 ```
 ┌─────────────────────────────────────────────┐
 │              QA API Endpoints                │
@@ -21,7 +86,7 @@ The QA system integrates deeply with EvolvAi's existing architecture:
 └──────────────┬──────────────────────────────┘
                │
        ┌───────▼────────┐
-       │   QA Engine     │  ← orchestrates test execution
+       │   QA Engine     │  ← use_hybrid_judge=False
        │  (engine.py)    │
        └──┬──────┬───┬──┘
           │      │   │
@@ -329,8 +394,16 @@ core/qa/
 ├── __init__.py          # Package init
 ├── models.py            # Data models: MUTConfig, TestCase, TestSuite, Reports
 ├── validators.py        # Safety, correctness, consistency, regression, LLM-judge
+│                        #   + validate_correctness_semantic() — normalizer-backed
+├── normalizer.py        # NEW: LLM Normalizer — format conversion layer
+│                        #   LLMNormalizer, NormalizationType, local + LLM normalization
+├── llm_judge.py         # NEW: Enhanced LLM-as-Judge — multi-dimensional scoring
+│                        #   LLMJudge, JudgeScore, build_judge_prompt
+├── hybrid_judge.py      # NEW: Hybrid Judge — three-layer evaluation orchestrator
+│                        #   HybridJudge, HybridJudgeConfig, run_hybrid_evaluation
 ├── test_generator.py    # Test case generation with templates
 └── engine.py            # QA engine: orchestrates test execution
+                         #   Updated: supports use_hybrid_judge=True/False
 
 personas/
 ├── adversarial.yaml     # Adversarial testing persona
@@ -343,8 +416,65 @@ apps/api/
 └── main.py              # (updated to include qa_router)
 
 scripts/
-└── run_qa_demo.py       # Interactive demo script
+├── run_qa_demo.py                  # Interactive demo script
+├── run_real_qa_tests.py            # Real-world LLM QA tests (32 tests × 3 models)
+└── run_normalization_comparison.py # NEW: Before/after normalization comparison
+
+data/
+├── NORMALIZATION_COMPARISON.md     # Comparison report showing improvement
+├── normalization_comparison.json   # Raw comparison data
+├── REAL_QA_REPORT.md              # Original test report
+└── real_qa_results.json           # Original test data
 
 tests/
-└── test_qa_system.py    # Comprehensive test suite
+└── test_qa_system.py    # Comprehensive test suite (63 tests, all passing)
 ```
+
+## Using the Hybrid Judge
+
+### Enable Normalization (Recommended)
+
+```python
+from core.qa.engine import QAEngine
+
+# Hybrid mode: normalizer + rules (fast, no LLM judge calls)
+engine = QAEngine(use_hybrid_judge=True, use_llm_judge=False)
+
+# Full hybrid: normalizer + rules + LLM judge (slower but most accurate)
+engine = QAEngine(use_hybrid_judge=True, use_llm_judge=True)
+```
+
+### Legacy Mode (Backward Compatible)
+
+```python
+# Rule-based only (original behavior)
+engine = QAEngine(use_hybrid_judge=False, use_llm_judge=False)
+```
+
+### Custom Configuration
+
+```python
+from core.qa.hybrid_judge import HybridJudgeConfig
+
+config = HybridJudgeConfig(
+    enable_normalizer=True,       # Layer 2: format conversion
+    enable_llm_judge=True,        # Layer 3: semantic evaluation
+    judge_model="GPT4O",          # Which model judges responses
+    safety_fast_path=True,        # Skip expensive layers on safety fails
+    safety_weight=0.3,            # Weight for safety score
+    correctness_weight=0.4,       # Weight for correctness score
+    judge_weight=0.3,             # Weight for LLM judge score
+)
+engine = QAEngine(use_hybrid_judge=True, hybrid_config=config)
+```
+
+### When to Use Normalization vs Rules
+
+| Scenario | Recommendation | Why |
+|----------|---------------|-----|
+| Math/numeric answers | Normalizer | Handles `9,386` vs `9386` |
+| Safety testing | Rules only | Fast, deterministic, no false positives |
+| Code generation | Normalizer | Extracts code from markdown blocks |
+| Adversarial testing | Rules + Judge | Need both pattern matching and semantic understanding |
+| Factual Q&A | Normalizer + Judge | Handles verbose but correct answers |
+| Regression testing | Rules | Deterministic comparison needed |

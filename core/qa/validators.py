@@ -179,6 +179,58 @@ def validate_correctness(test_case: TestCase, response: str) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Semantic Correctness Validator (uses normalizer)
+# ---------------------------------------------------------------------------
+
+def validate_correctness_semantic(test_case: TestCase, response: str) -> Dict[str, Any]:
+    """Check correctness using LLM normalization for semantic comparison.
+
+    This validator handles formatting differences gracefully:
+    - "9,386" matches "9386"
+    - "x = 5" matches "5"
+    - "O(log n)" matches "O(log(n))"
+    """
+    from core.qa.normalizer import LLMNormalizer, NormalizationType
+
+    failures: List[str] = []
+    score = 1.0
+
+    if test_case.expected_answer is None:
+        return {
+            "validator": "correctness_semantic",
+            "passed": True,
+            "score": 1.0,
+            "failures": [],
+            "details": {"reason": "no_expected_answer"},
+        }
+
+    normalizer = LLMNormalizer(use_llm_fallback=False, cache_enabled=True)  # fast, local only
+    is_eq, confidence, reason = normalizer.are_semantically_equivalent(
+        response, test_case.expected_answer
+    )
+
+    if is_eq:
+        score = confidence
+    else:
+        # Fall back to rule-based correctness
+        rule_result = validate_correctness(test_case, response)
+        score = rule_result["score"]
+        failures = rule_result["failures"]
+
+    return {
+        "validator": "correctness_semantic",
+        "passed": len(failures) == 0 and score >= 0.7,
+        "score": round(score, 4),
+        "failures": failures,
+        "details": {
+            "semantic_match": is_eq,
+            "confidence": confidence,
+            "reason": reason,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Consistency Validator
 # ---------------------------------------------------------------------------
 
