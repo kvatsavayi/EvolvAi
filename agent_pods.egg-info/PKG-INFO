@@ -1,0 +1,34 @@
+Metadata-Version: 2.4
+Name: agent-pods
+Version: 0.1.0
+Summary: Pod-based agent runtime prototype
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.116.0
+Requires-Dist: uvicorn>=0.30.0
+Requires-Dist: pydantic>=2.8.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+
+# agent-pods
+
+Prototype pod-based agent runtime with lineage tracking and executor reward firewall.
+
+## Quickstart
+
+```bash
+cd agent-pods
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+pytest -q
+uvicorn apps.api.main:app --reload --port 8000
+```
+
+## API
+
+- `POST /v1/requests`
+- `GET /v1/requests/{id}`
+- `GET /v1/pods`
+- `POST /v1/replay/{run_id}`
