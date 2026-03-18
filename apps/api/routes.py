@@ -1223,7 +1223,7 @@ def _model_curate_learning_entry(
         f"OUTCOME_FACTS: {json.dumps(extracted_facts)}\n"
     )
     try:
-        if provider in {"openai", "chatgpt", "remote"}:
+        if provider in {"openai", "chatgpt", "remote", "abacus"}:
             endpoint = f"{base_url or 'https://api.openai.com/v1'}/chat/completions"
             body = json.dumps(
                 {
@@ -1233,7 +1233,11 @@ def _model_curate_learning_entry(
                     "max_tokens": 350,
                 }
             ).encode("utf-8")
-            api_key = str(os.getenv("OPENAI_API_KEY", "") or os.getenv("REMOTE_API_KEY", ""))
+            api_key = str(
+                os.getenv("OPENAI_API_KEY", "")
+                or os.getenv("ABACUS_API_KEY", "")
+                or os.getenv("REMOTE_API_KEY", "")
+            )
             headers = {"Content-Type": "application/json"}
             if api_key:
                 headers["Authorization"] = f"Bearer {api_key}"

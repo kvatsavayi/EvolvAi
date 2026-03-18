@@ -22,6 +22,9 @@ jobs:
       - name: Install
         run: pip install -e .[dev]
 
+      - name: Install Abacus SDK
+        run: python3 -m pip install abacusai
+
       - name: Unit Tests
         run: pytest -q tests
 
@@ -42,7 +45,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deployment Placeholder
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Runtime + Abacus SDK
         run: |
-          echo "Add Abacus workflow deploy command here."
-          echo "Expected inputs: runtime image, deploy config, workflow entrypoint."
+          pip install -e .[dev]
+          python3 -m pip install abacusai
+
+      - name: Deploy Workflow to Abacus
+        env:
+          ABACUS_API_KEY: ${{ secrets.ABACUS_API_KEY }}
+          ABACUS_PROJECT_ID: ${{ secrets.ABACUS_PROJECT_ID }}
+          ABACUS_MODEL_ID: ${{ secrets.ABACUS_MODEL_ID }}
+          DEPLOYMENT_NAME: ${{ secrets.DEPLOYMENT_NAME }}
+          INSTALL_SOURCE: ${{ secrets.INSTALL_SOURCE }}
+          DEPLOYMENT_EXPOSURE: ${{ secrets.DEPLOYMENT_EXPOSURE }}
+          MODEL_PROVIDER: ${{ secrets.MODEL_PROVIDER }}
+          MODEL_NAME: ${{ secrets.MODEL_NAME }}
+          MODEL_BASE_URL: ${{ secrets.MODEL_BASE_URL }}
+        run: python3 src/update_agent.py
