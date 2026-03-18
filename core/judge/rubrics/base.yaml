@@ -1,0 +1,7 @@
+rubric: base
+criteria:
+  - task_success
+  - policy_compliance
+  - grounding
+  - format_validity
+  - efficiency

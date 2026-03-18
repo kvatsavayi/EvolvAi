@@ -1,0 +1,5 @@
+mode: broadcast
+exploration_epsilon: 0.15
+latency_weight: 0.2
+success_weight: 0.5
+retry_weight: 0.3

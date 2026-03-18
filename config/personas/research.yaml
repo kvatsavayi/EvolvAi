@@ -1,0 +1,13 @@
+persona_id: research
+executor_prompt_template_id: ept_research_v1
+allowed_tools: [http_get, fs_read]
+forbidden_tools: [fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 6
+  max_http_get: 4
+time_budget_seconds: 900
+output_schema: research_summary_v1
+judge_weighting:
+  citations: 0.5
+  grounding: 0.3
+  format_validity: 0.2

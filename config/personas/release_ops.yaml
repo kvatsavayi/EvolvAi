@@ -1,0 +1,13 @@
+persona_id: release_ops
+executor_prompt_template_id: ept_release_ops_v1
+allowed_tools: [fs_read]
+forbidden_tools: [fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 4
+  max_http_get: 0
+time_budget_seconds: 900
+output_schema: release_plan_v1
+judge_weighting:
+  safety: 0.5
+  rollback_quality: 0.3
+  format_validity: 0.2

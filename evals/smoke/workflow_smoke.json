@@ -1,0 +1,26 @@
+[
+  {
+    "name": "hello-pod-general",
+    "payload": {
+      "user_input": "hello pod",
+      "request_type": "general",
+      "max_steps": 2,
+      "retry_same_persona_once": false
+    },
+    "expect": {
+      "final_status": "success"
+    }
+  },
+  {
+    "name": "weather-workflow-thin",
+    "payload": {
+      "user_input": "build a weather station app",
+      "request_type": "coding",
+      "max_steps": 4,
+      "retry_same_persona_once": false
+    },
+    "expect": {
+      "canonical_target": "weather_station_app"
+    }
+  }
+]

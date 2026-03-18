@@ -1,0 +1,16 @@
+.DS_Store
+.env
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+apps/ui/node_modules/
+apps/ui/dist/
+
+data/
+.docker-nocreds/
+
+*.sqlite
+*.log
+*.zip

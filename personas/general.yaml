@@ -1,0 +1,13 @@
+persona_id: general
+executor_prompt_template_id: ept_general_v1
+allowed_tools: [http_get, fs_read]
+forbidden_tools: [fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 5
+  max_http_get: 3
+time_budget_seconds: 600
+output_schema: final_answer_v1
+judge_weighting:
+  task_success: 0.4
+  policy_compliance: 0.3
+  format_validity: 0.3

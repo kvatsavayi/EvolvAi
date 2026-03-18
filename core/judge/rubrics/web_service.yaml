@@ -1,0 +1,5 @@
+rubric: web_service
+criteria:
+  - http_grounding
+  - response_contract
+  - safety

@@ -1,0 +1,13 @@
+persona_id: clarifier
+executor_prompt_template_id: ept_clarifier_v1
+allowed_tools: []
+forbidden_tools: [http_get, fs_read, fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 0
+  max_http_get: 0
+time_budget_seconds: 300
+output_schema: clarifying_question_v1
+judge_weighting:
+  intent_match: 0.5
+  format_validity: 0.3
+  policy_compliance: 0.2

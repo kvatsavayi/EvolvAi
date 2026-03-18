@@ -1,0 +1,26 @@
+[
+  {
+    "name": "replay-same-snapshot",
+    "seed_payload": {
+      "user_input": "hello pod",
+      "request_type": "general"
+    },
+    "replay": {
+      "persona_id": "research"
+    },
+    "expect": {
+      "same_snapshot": true
+    }
+  },
+  {
+    "name": "replay-weather-target",
+    "seed_payload": {
+      "user_input": "build a weather station app",
+      "request_type": "coding"
+    },
+    "replay": {},
+    "expect": {
+      "canonical_target": "weather_station_app"
+    }
+  }
+]

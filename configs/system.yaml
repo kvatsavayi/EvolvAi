@@ -1,0 +1,5 @@
+app_name: agent-pods
+environment: dev
+reward_firewall:
+  block_survival_awareness: true
+  block_judge_signal_leakage: true

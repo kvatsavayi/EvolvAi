@@ -1,0 +1,13 @@
+persona_id: code_review
+executor_prompt_template_id: ept_code_review_v1
+allowed_tools: [fs_read]
+forbidden_tools: [fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 4
+  max_http_get: 0
+time_budget_seconds: 900
+output_schema: code_review_findings_v1
+judge_weighting:
+  risk_detection: 0.5
+  precision: 0.3
+  format_validity: 0.2

@@ -1,0 +1,13 @@
+persona_id: implementation
+executor_prompt_template_id: ept_implementation_v1
+allowed_tools: [fs_read, fs_write]
+forbidden_tools: [shell_exec]
+tool_budgets:
+  max_total_tool_calls: 6
+  max_http_get: 1
+time_budget_seconds: 1200
+output_schema: implementation_diff_v1
+judge_weighting:
+  task_success: 0.5
+  policy_compliance: 0.3
+  format_validity: 0.2

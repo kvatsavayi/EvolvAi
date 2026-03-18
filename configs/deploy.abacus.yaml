@@ -1,0 +1,20 @@
+model:
+  provider: ollama
+  name: gpt-4o-mini
+runtime:
+  profile: thin
+personas:
+  enabled:
+    - general
+    - research
+    - implementation
+retry:
+  max_attempts: 2
+budgets:
+  max_total_tool_calls: 8
+workspace:
+  enabled: false
+commit_lane:
+  enabled: true
+learning:
+  enabled: true

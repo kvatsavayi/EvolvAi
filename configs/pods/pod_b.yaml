@@ -1,0 +1,5 @@
+pod_id: pod_b
+enabled: true
+persona: reviewer
+dna_version: 1
+max_tool_calls: 3

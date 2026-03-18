@@ -1,0 +1,5 @@
+pod_id: pod_a
+enabled: true
+persona: general
+dna_version: 1
+max_tool_calls: 3

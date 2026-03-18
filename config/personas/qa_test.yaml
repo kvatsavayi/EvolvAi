@@ -1,0 +1,13 @@
+persona_id: qa_test
+executor_prompt_template_id: ept_qa_test_v1
+allowed_tools: [fs_read]
+forbidden_tools: [fs_write, shell_exec]
+tool_budgets:
+  max_total_tool_calls: 8
+  max_http_get: 0
+time_budget_seconds: 1200
+output_schema: qa_report_v1
+judge_weighting:
+  defect_detection: 0.5
+  reproducibility: 0.3
+  format_validity: 0.2

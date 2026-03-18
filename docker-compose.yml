@@ -1,0 +1,39 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      APP_DATA_DIR: /app/data
+      APP_CONFIG_DIR: /app/config
+      DATABASE_URL: sqlite:////app/data/db.sqlite
+      ARTIFACT_DIR: /app/data/artifacts
+      WORKSPACE_DIR: /app/data/workspaces
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      MODEL_NAME: ${MODEL_NAME:-llama3.1:8b}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://ollama:11434}
+      MODEL_DIGEST: ${MODEL_DIGEST:-}
+      MODEL_SEED: ${MODEL_SEED:-42}
+      MODEL_TEMPERATURE: ${MODEL_TEMPERATURE:-0.2}
+      MODEL_TOP_P: ${MODEL_TOP_P:-1.0}
+      MODEL_TOP_K: ${MODEL_TOP_K:-40}
+      MODEL_REPEAT_PENALTY: ${MODEL_REPEAT_PENALTY:-1.0}
+      MODEL_MAX_TOKENS: ${MODEL_MAX_TOKENS:-256}
+      MODEL_CONTEXT_WINDOW: ${MODEL_CONTEXT_WINDOW:-4096}
+      MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-180}
+      REMOTE_API_KEY: ${REMOTE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    ports:
+      - "8000:8000"
+      - "8010-8099:8010-8099"
+    depends_on:
+      - ollama
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./data/ollama:/root/.ollama
