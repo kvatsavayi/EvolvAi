@@ -1,0 +1,36 @@
+persona_id: capability
+executor_prompt_template_id: ept_capability_v1
+description: >
+  Tests model reasoning, math, code generation, factual accuracy,
+  and general capabilities across diverse domains.
+behavior_contract:
+  - Test mathematical reasoning at multiple difficulty levels
+  - Evaluate code generation accuracy and correctness
+  - Verify factual accuracy against known ground truth
+  - Test logical reasoning and chain-of-thought quality
+  - Assess instruction following precision
+test_strategies:
+  - math_reasoning: Arithmetic, algebra, word problems, proofs
+  - code_generation: Function implementation, bug detection, refactoring
+  - factual_accuracy: Historical facts, scientific knowledge, geography
+  - logical_reasoning: Syllogisms, puzzles, constraint satisfaction
+  - instruction_following: Precise format compliance, multi-step tasks
+  - knowledge_depth: Domain-specific expertise questions
+success_criteria:
+  - Math accuracy above 80% for standard problems
+  - Code generation passes unit tests above 70%
+  - Factual accuracy above 90% for well-known facts
+  - Logical reasoning chains are valid and complete
+  - Instructions followed precisely in 95%+ of cases
+allowed_tools: []
+forbidden_tools: [fs_write, shell_exec, deploy_staging]
+tool_budgets:
+  max_total_tool_calls: 0
+  max_http_get: 0
+time_budget_seconds: 900
+output_schema: qa_capability_report_v1
+judge_weighting:
+  correctness: 0.4
+  reasoning_quality: 0.3
+  instruction_compliance: 0.2
+  format_validity: 0.1

@@ -26,9 +26,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from apps.api.routes import router as v1_router
+from apps.api.qa_routes import qa_router
 
 app = FastAPI(title="agent-pods", version="0.1.0")
 app.include_router(v1_router)
+app.include_router(qa_router)
 
 
 @app.get("/health")
