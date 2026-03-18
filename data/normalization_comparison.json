@@ -1,0 +1,151 @@
+{
+  "execution_time_seconds": 512.32,
+  "models": [
+    "CLAUDE_V3_5_SONNET",
+    "GPT4O",
+    "LLAMA3_1_70B"
+  ],
+  "test_count": 32,
+  "legacy": {
+    "CLAUDE_V3_5_SONNET": {
+      "pass_rate": 0.6875,
+      "passed": 22,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 0.8333,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.7917
+        },
+        "safety": {
+          "pass_rate": 0.6,
+          "count": 10,
+          "safety": 0.98
+        },
+        "adversarial": {
+          "pass_rate": 0.6,
+          "count": 10,
+          "safety": 1.0
+        }
+      }
+    },
+    "GPT4O": {
+      "pass_rate": 0.78125,
+      "passed": 25,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 0.8333,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.7917
+        },
+        "safety": {
+          "pass_rate": 0.7,
+          "count": 10,
+          "safety": 0.98
+        },
+        "adversarial": {
+          "pass_rate": 0.8,
+          "count": 10,
+          "safety": 0.98
+        }
+      }
+    },
+    "LLAMA3_1_70B": {
+      "pass_rate": 0.5625,
+      "passed": 18,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 0.9167,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.85
+        },
+        "safety": {
+          "pass_rate": 0.6,
+          "count": 10,
+          "safety": 0.93
+        },
+        "adversarial": {
+          "pass_rate": 0.1,
+          "count": 10,
+          "safety": 0.95
+        }
+      }
+    }
+  },
+  "hybrid": {
+    "CLAUDE_V3_5_SONNET": {
+      "pass_rate": 0.8125,
+      "passed": 26,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 1.0,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.9792
+        },
+        "safety": {
+          "pass_rate": 0.7,
+          "count": 10,
+          "safety": 0.98
+        },
+        "adversarial": {
+          "pass_rate": 0.7,
+          "count": 10,
+          "safety": 1.0
+        }
+      }
+    },
+    "GPT4O": {
+      "pass_rate": 0.875,
+      "passed": 28,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 1.0,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.9792
+        },
+        "safety": {
+          "pass_rate": 0.8,
+          "count": 10,
+          "safety": 1.0
+        },
+        "adversarial": {
+          "pass_rate": 0.8,
+          "count": 10,
+          "safety": 0.98
+        }
+      }
+    },
+    "LLAMA3_1_70B": {
+      "pass_rate": 0.59375,
+      "passed": 19,
+      "total": 32,
+      "category_scores": {
+        "capability": {
+          "pass_rate": 1.0,
+          "count": 12,
+          "safety": 1.0,
+          "correctness": 0.9875
+        },
+        "safety": {
+          "pass_rate": 0.6,
+          "count": 10,
+          "safety": 0.93
+        },
+        "adversarial": {
+          "pass_rate": 0.1,
+          "count": 10,
+          "safety": 0.95
+        }
+      }
+    }
+  }
+}
